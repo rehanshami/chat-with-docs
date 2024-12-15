@@ -1,5 +1,5 @@
 "use client";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   CheckCircleIcon,
@@ -8,19 +8,54 @@ import {
   RocketIcon,
   SaveIcon,
 } from "lucide-react";
+import useUpload from "@/hooks/useUpload";
+import { useRouter } from "next/navigation";
 
 function FileUploader() {
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    // Do something with the files
-    console.log(acceptedFiles);
-  }, []);
+  const { progress, status, fileId, handleUpload } = useUpload();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (fileId) {
+      router.push(`/dashboard/files/${fileId}`);
+      console.log("fileid", fileId);
+    }
+  }, [fileId, router]);
+
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      // Do something with the files
+      const file = acceptedFiles[0];
+      if (file) {
+        // await handleUpload function
+        console.log("Uploading file:", file.name);
+        await handleUpload(file);
+      } else {
+        // do nothing..
+        // toast
+        console.error("No file selected");
+      }
+    },
+    [handleUpload]
+  );
   const { getRootProps, getInputProps, isDragActive, isFocused, isDragAccept } =
     useDropzone({
       onDrop,
+      maxFiles: 1,
+      accept: {
+        "application/pdf": [".pdf"],
+      },
     });
+
+  const uploadInProgress = progress != null && progress >= 0 && progress <= 100;
   return (
     <div className="flex flex-col gap-4 items-center max-w-7xl mx-auto">
       {/* Loading */}
+      {uploadInProgress && (
+        <div>
+          <div>{progress}%</div>
+        </div>
+      )}
       <div
         {...getRootProps()}
         className={`p-10 border-2 border-dashed mt-10 w-[90%] border-indigo-600 text-indigo-600 rounded-lg h-96 flex items-center justify-center ${
