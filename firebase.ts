@@ -5,7 +5,7 @@ import { getStorage } from "firebase/storage";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyA24qqxIldOv7mdTQ74_ZIrof4xr-Ji1WM",
+  apiKey: process.env.FIREBASE_CONFIG_API_KEY,
   authDomain: "chat-with-pdfs-8c7e5.firebaseapp.com",
   projectId: "chat-with-pdfs-8c7e5",
   storageBucket: "chat-with-pdfs-8c7e5.firebasestorage.app",

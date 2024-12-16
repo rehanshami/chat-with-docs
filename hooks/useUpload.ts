@@ -1,4 +1,5 @@
 "use client";
+import { generateEmbeddings } from "@/actions/generateEmbeddings";
 import { db, storage } from "@/firebase";
 import { useUser } from "@clerk/nextjs";
 import { error } from "console";
@@ -15,7 +16,7 @@ export enum StatusText {
   GENERATING = "Generating AI Embeddings. This will only take a few seconds...",
 }
 
-export type Status = StatusText[keyof StatusText];
+export type Status = StatusText;
 
 function useUpload() {
   const [progress, setProgress] = useState<number | null>(null);
@@ -58,6 +59,7 @@ function useUpload() {
         console.error("Error during upload:", error);
       },
       async () => {
+        setStatus(StatusText.UPLOADED);
         console.log("Upload completed");
         try {
           const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
@@ -76,6 +78,9 @@ function useUpload() {
           console.log("Metadata saved to Firestore");
 
           setStatus(StatusText.GENERATING);
+          // Generate AI Embeddings
+          await generateEmbeddings(fileIdToUploadTo);
+
           setFileId(fileIdToUploadTo);
         } catch (e) {
           console.error("Error saving metadata to Firestore:", e);
