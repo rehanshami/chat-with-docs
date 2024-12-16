@@ -25,8 +25,58 @@ function Chat({ id }: { id: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isPending, startTransition] = useTransition();
 
+  const [snapshot, loading, error] = useCollection(
+    user &&
+      query(
+        collection(db, "users", user?.id, "files", id, "chat"),
+        orderBy("createdAt", "asc")
+      )
+  );
+
+  useEffect(() => {
+    if (!snapshot) return;
+
+    console.log("Updated snapshot", snapshot.docs);
+
+    // get second to last message to check if the AI is thinking
+    // const lastMessage = messages.pop();
+  }, [snapshot]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    const q = input;
+    setInput("");
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "human",
+        message: q,
+        createdAt: new Date(),
+      },
+      {
+        role: "ai",
+        message: "Thinking...",
+        createdAt: new Date(),
+      },
+    ]);
+
+    startTransition(async () => {
+      const { success, message } = await askQuestion(id, q);
+
+      if (!success) {
+        setMessages((prev) =>
+          prev.slice(0, prev.length - 1).concat([
+            {
+              role: "ai",
+              message: `Whoops... ${message}`,
+              createdAt: new Date(),
+            },
+          ])
+        );
+      }
+    });
   };
   return (
     <div className="flex flex-col h-full overflow-scroll">
@@ -41,7 +91,13 @@ function Chat({ id }: { id: string }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-        <Button>Ask</Button>
+        <Button type="submit" disabled={!input || isPending}>
+          {isPending ? (
+            <Loader2Icon className="animate-spin text-indigo-600" />
+          ) : (
+            "Ask"
+          )}
+        </Button>
       </form>
     </div>
   );
