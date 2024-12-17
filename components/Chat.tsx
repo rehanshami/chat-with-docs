@@ -3,13 +3,15 @@
 import { FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-// import { askQuestion, Message } from "@/actions/askQuestion";
 import { Loader2Icon } from "lucide-react";
-import { ChatMessage } from "@langchain/core/messages";
+// import ChatMessage from "./ChatMessage";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { useUser } from "@clerk/nextjs";
 import { collection, orderBy, query } from "firebase/firestore";
 import { db } from "@/firebase";
+import { askQuestion } from "@/actions/askQuestion";
+import ChatMessage from "./ChatMessage";
+import { useToast } from "./ui/use-toast";
 
 export type Message = {
   id?: string;
@@ -40,6 +42,23 @@ function Chat({ id }: { id: string }) {
 
     // get second to last message to check if the AI is thinking
     // const lastMessage = messages.pop();
+
+    const lastMessage = messages.pop();
+    if (lastMessage?.role === "ai" && lastMessage.message === "Thinking...") {
+      // return as this is a dummy placeholder message
+      return;
+    }
+
+    const newMessages = snapshot.docs.map((doc) => {
+      const { role, message, createdAt } = doc.data();
+      return {
+        id: doc.id,
+        role,
+        message,
+        createdAt: createdAt.toDate(),
+      };
+    });
+    setMessages(newMessages);
   }, [snapshot]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -48,6 +67,7 @@ function Chat({ id }: { id: string }) {
     const q = input;
     setInput("");
 
+    //Optimistic UI update
     setMessages((prev) => [
       ...prev,
       {
@@ -81,7 +101,14 @@ function Chat({ id }: { id: string }) {
   return (
     <div className="flex flex-col h-full overflow-scroll">
       {/* Chat contents */}
-      <div className="flex-1 w-full">{/* Chat messages */}</div>
+      <div className="flex-1 w-full">
+        {/* Chat messages */}
+        {messages.map((message) => (
+          <div key={message.id}>
+            <p>{message.message}</p>
+          </div>
+        ))}
+      </div>
       <form
         onSubmit={handleSubmit}
         className="flex sticky bottom-0 space-x-2 p-5 bg-indigo-600/75"

@@ -1,12 +1,12 @@
 "use server";
 
-import { Message } from "@/components/Chat";
 import { adminDb } from "@/firebaseAdmin";
+import { generateLangchainCompletion } from "@/lib/langchain";
 import { auth } from "@clerk/nextjs/server";
-// import { generateLangchainCompletion } from "@/lib/langchain/langchain";
+import { Message } from "@/components/Chat";
 
-const FREE_LIMIT = 3;
-const PRO_LIMIT = 100;
+const PRO_LIMIT = 20;
+const FREE_LIMIT = 2;
 
 export async function askQuestion(id: string, question: string) {
   auth().protect();
@@ -19,7 +19,6 @@ export async function askQuestion(id: string, question: string) {
     .doc(id)
     .collection("chat");
 
-  // Check how many user messages in chat
   const chatSnapshot = await chatRef.get();
   const userMessages = chatSnapshot.docs.filter(
     (doc) => doc.data().role === "human"
