@@ -14,6 +14,7 @@ import { Index, RecordMetadata } from "@pinecone-database/pinecone";
 import { adminDb } from "../firebaseAdmin";
 import { auth } from "@clerk/nextjs/server";
 
+// Initialize the OpenAI model with API key and model name
 const model = new ChatOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   modelName: "gpt-4o",
@@ -27,11 +28,10 @@ async function fetchMessagesFromDB(docId: string) {
     throw new Error("User not found");
   }
 
-  console.log("--- Fetching chat history from firestore database ---");
+  console.log("--- Fetching chat history from the firestore database... ---");
   // Get the last 6 messages from the chat history
-
   const chats = await adminDb
-    .collection("users")
+    .collection(`users`)
     .doc(userId)
     .collection("files")
     .doc(docId)
@@ -49,7 +49,6 @@ async function fetchMessagesFromDB(docId: string) {
   console.log(
     `--- fetched last ${chatHistory.length} messages successfully ---`
   );
-
   console.log(chatHistory.map((msg) => msg.content.toString()));
 
   return chatHistory;
@@ -57,11 +56,12 @@ async function fetchMessagesFromDB(docId: string) {
 
 export async function generateDocs(docId: string) {
   const { userId } = await auth();
+
   if (!userId) {
     throw new Error("User not found");
   }
 
-  console.log("--- Fetching the download URL from Firebase ... ---");
+  console.log("--- Fetching the download URL from Firebase... ---");
   const firebaseRef = await adminDb
     .collection("users")
     .doc(userId)
@@ -77,16 +77,21 @@ export async function generateDocs(docId: string) {
 
   console.log(`--- Download URL fetched successfully: ${downloadUrl} ---`);
 
+  // Fetch the PDF from the specified URL
   const response = await fetch(downloadUrl);
 
+  // Load the PDF into a PDFDocument object
   const data = await response.blob();
 
+  // Load the PDF document from the specified path
   console.log("--- Loading PDF document... ---");
   const loader = new PDFLoader(data);
   const docs = await loader.load();
 
-  console.log("--- Splitting the document into smaller parts");
+  // Split the loaded document into smaller parts for easier processing
+  console.log("--- Splitting the document into smaller parts... ---");
   const splitter = new RecursiveCharacterTextSplitter();
+
   const splitDocs = await splitter.splitDocuments(docs);
   console.log(`--- Split into ${splitDocs.length} parts ---`);
 
@@ -97,8 +102,7 @@ async function namespaceExists(
   index: Index<RecordMetadata>,
   namespace: string
 ) {
-  if (namespace === null) throw new Error("No namespace value provided");
-
+  if (namespace === null) throw new Error("No namespace value provided.");
   const { namespaces } = await index.describeIndexStats();
   return namespaces?.[namespace] !== undefined;
 }
@@ -112,7 +116,8 @@ export async function generateEmbeddingsInPineconeVectorStore(docId: string) {
 
   let pineconeVectorStore;
 
-  console.log("--- Generating embeddings... ----");
+  // Generate embeddings (numerical representations) for the split documents
+  console.log("--- Generating embeddings... ---");
   const embeddings = new OpenAIEmbeddings();
 
   const index = await pineconeClient.index(indexName);
@@ -130,6 +135,7 @@ export async function generateEmbeddingsInPineconeVectorStore(docId: string) {
 
     return pineconeVectorStore;
   } else {
+    // If the namespace does not exist, download the PDF from firestore via the stored Download URL & generate the embeddings and store them in the Pinecone vector store
     const splitDocs = await generateDocs(docId);
 
     console.log(
@@ -144,6 +150,7 @@ export async function generateEmbeddingsInPineconeVectorStore(docId: string) {
         namespace: docId,
       }
     );
+
     return pineconeVectorStore;
   }
 }
@@ -152,30 +159,28 @@ const generateLangchainCompletion = async (docId: string, question: string) => {
   let pineconeVectorStore;
 
   pineconeVectorStore = await generateEmbeddingsInPineconeVectorStore(docId);
-
   if (!pineconeVectorStore) {
-    throw new Error("Pinecone vectore store not found");
+    throw new Error("Pinecone vector store not found");
   }
 
   // Create a retriever to search through the vector store
-  console.log("--- Creating a retriever ---");
+  console.log("--- Creating a retriever... ---");
   const retriever = pineconeVectorStore.asRetriever();
 
-  // Fetch database messages --- Collecting all the information we can give to AI model to give it context
+  // Fetch the chat history from the database
   const chatHistory = await fetchMessagesFromDB(docId);
 
   // Define a prompt template for generating search queries based on conversation history
   console.log("--- Defining a prompt template... ---");
-
   const historyAwarePrompt = ChatPromptTemplate.fromMessages([
     ...chatHistory, // Insert the actual chat history here
-    new HumanMessage("{input}"),
-    new HumanMessage(
-      "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation"
-    ),
-  ]);
 
-  historyAwarePrompt.inputVariables = ["input"];
+    ["user", "{input}"],
+    [
+      "user",
+      "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation",
+    ],
+  ]);
 
   // Create a history-aware retriever chain that uses the model, retriever, and prompt
   console.log("--- Creating a history-aware retriever chain... ---");
@@ -186,19 +191,20 @@ const generateLangchainCompletion = async (docId: string, question: string) => {
   });
 
   // Define a prompt template for answering questions based on retrieved context
-
   console.log("--- Defining a prompt template for answering questions... ---");
   const historyAwareRetrievalPrompt = ChatPromptTemplate.fromMessages([
     [
       "system",
       "Answer the user's questions based on the below context:\n\n{context}",
     ],
+
     ...chatHistory, // Insert the actual chat history here
-    new HumanMessage("{input}"),
+
+    ["user", "{input}"],
   ]);
-  historyAwareRetrievalPrompt.inputVariables = ["context", "input"];
+
   // Create a chain to combine the retrieved documents into a coherent response
-  console.log("--- Creating a document combining chain ---");
+  console.log("--- Creating a document combining chain... ---");
   const historyAwareCombineDocsChain = await createStuffDocumentsChain({
     llm: model,
     prompt: historyAwareRetrievalPrompt,
@@ -217,7 +223,10 @@ const generateLangchainCompletion = async (docId: string, question: string) => {
     input: question,
   });
 
+  // Print the result to the console
   console.log(reply.answer);
   return reply.answer;
 };
+
+// Export the model and the run function
 export { model, generateLangchainCompletion };
