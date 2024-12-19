@@ -2,11 +2,18 @@ import { initializeApp, getApps, App, getApp, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
-const serviceKey = require("@/service_key.json");
+// const serviceKey = require("@/service_key.json");
 
 let app: App;
 
 if (getApps().length === 0) {
+  const serviceKeyBase64 = process.env.SERVICE_KEY_BASE64;
+  if (!serviceKeyBase64) {
+    throw new Error("SERVICE_KEY_BASE64 environment variable not found");
+  }
+  const serviceKey = JSON.parse(
+    Buffer.from(serviceKeyBase64, "base64").toString("utf-8")
+  );
   app = initializeApp({
     credential: cert(serviceKey),
   });
