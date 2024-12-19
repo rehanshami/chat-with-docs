@@ -11,7 +11,6 @@ import { collection, orderBy, query } from "firebase/firestore";
 import { db } from "@/firebase";
 import { askQuestion } from "@/actions/askQuestion";
 import ChatMessage from "./ChatMessage";
-import { useToast } from "./ui/use-toast";
 
 export type Message = {
   id?: string;
