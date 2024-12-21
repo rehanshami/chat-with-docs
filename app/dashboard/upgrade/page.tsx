@@ -1,8 +1,53 @@
+"use client";
+import { createCheckoutSession } from "@/actions/createCheckoutSession";
 import { Button } from "@/components/ui/button";
+import useSubscription from "@/hooks/useSubscription";
+import getStripe from "@/lib/stripe-js";
+import { useUser } from "@clerk/nextjs";
 import { CheckIcon } from "lucide-react";
-import React from "react";
+import { useRouter } from "next/navigation";
+import React, { useTransition } from "react";
+
+export type UserDetails = {
+  email: string;
+  name: string;
+};
 
 function PricingPage() {
+  const { user } = useUser();
+  const router = useRouter();
+  const { hasActiveMembership, loading } = useSubscription();
+  // isPending is true while async function is loading
+  const [isPending, startTransition] = useTransition();
+
+  const handleUpgrade = () => {
+    if (!user) return;
+
+    const userDetails: UserDetails = {
+      email: user.primaryEmailAddress?.toString()!,
+      name: user.fullName!,
+    };
+
+    startTransition(async () => {
+      // load Stripe
+      // Stripe JS browser client side envrionment
+      // Stripe for NodeJS
+      const stripe = await getStripe();
+
+      if (hasActiveMembership) {
+        //Create stripe portal
+      }
+
+      const sessionId = await createCheckoutSession(userDetails);
+
+      await stripe?.redirectToCheckout({
+        sessionId,
+      });
+    });
+  };
+
+  // Pull in user subscriptions
+
   return (
     <div>
       <div className="py-24 sm:py-32">
@@ -70,8 +115,16 @@ function PricingPage() {
                 /month
               </span>
             </p>
-            <Button className="bg-indigo-600 w-full text-white shadow-sm hover:bg-indigo-500 mt-6 block rounded-md px-3 p-2 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-              Upgrade to pro
+            <Button
+              className="bg-indigo-600 w-full text-white shadow-sm hover:bg-indigo-500 mt-6 block rounded-md px-3 p-2 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              disabled={loading || isPending}
+              onClick={handleUpgrade}
+            >
+              {isPending || loading
+                ? "Loading..."
+                : hasActiveMembership
+                ? "Manage plan"
+                : "Upgrade to pro"}
             </Button>
             <ul
               role="list"
