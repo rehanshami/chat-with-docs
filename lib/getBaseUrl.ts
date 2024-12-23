@@ -4,3 +4,4 @@ const getBaseUrl = () =>
     : `https://${process.env.VERCEL_URL}`;
 
 export default getBaseUrl;
+
