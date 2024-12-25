@@ -51,7 +51,7 @@ function FileUploader() {
         console.error("No file selected");
       }
     },
-    [handleUpload]
+    [handleUpload, filesLoading, isOverFileLimit, toast]
   );
 
   const statusIcons: Record<Status, JSX.Element> = {
