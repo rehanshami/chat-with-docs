@@ -52,25 +52,25 @@ const features = [
 
 export default function Home() {
   return (
-    <main className="flex-1 overflow-scroll p-2 lg:p-5 bg-gradient-to-bl from-white to-indigo-600">
+    <main className="flex-1 overflow-scroll p-2 lg:p-5 bg-gradient-to-bl from-white to-indigo-900">
       <div className="bg-white py-24 sm:py-32 rounded-md drop-shadow-xl">
         <div className="flex flex-col justify-center items-center mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl sm:text-center">
-            <h2 className="text-base font-semibold leading-7 text-indigo-600">
+            <h2 className=" text-base font-semibold leading-7 text-indigo-800">
               Your Interactive Document Companion
             </h2>
 
-            <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+            <p className="typewriter mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-6xl">
               Transform Your PDFs into Interactive Conversations
             </p>
 
             <p className="mt-6 text-lg leading-8 text-gray-600">
               Introducing{" "}
-              <span className="font-bold text-indigo-600">Chat with PDF.</span>
+              <span className="font-bold text-gray-900">Chat with PDF.</span>
               <br />
               <br /> Upload your document, and our chatbot will answer
               questions, summarize content, and answer all your Qs. Ideal for
-              everyone, <span className="text-indigo-600">
+              everyone, <span className="text-indigo-800">
                 Chat with PDF
               </span>{" "}
               turns static documents into{" "}
@@ -87,7 +87,7 @@ export default function Home() {
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <Image
               alt="App screenshot"
-              src="https://i.imgur.com/VciRSTI.jpeg"
+              src="https://i.imgur.com/tA2AAj0.jpeg"
               width={2432}
               height={1442}
               className="mb-[0%] rounded-xl shadow-2xl ring-1 ring-gray-900/10"
@@ -100,11 +100,14 @@ export default function Home() {
         <div className="mx-auto mt-16 max-w-7xl px-6 sm:mt-20 md:mt-24 lg:px-8">
           <dl className="mx-auto grid max-2xl grid-cols gap-x-6 gap-y-10 text-base leading-7 text-gray-600 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:grid-cols-3 lg:gap-x-8 lg:gap-y-16">
             {features.map((feature) => (
-              <div className="relative pl-9" key={feature.name}>
-                <dt className="inline font-semibold text-gray-900">
+              <div
+                className="flex flex-col items-start space-y-2 pl-9"
+                key={feature.name}
+              >
+                <dt className=" font-semibold text-gray-900">
                   <feature.icon
                     aria-hidden="true"
-                    className="absolute left-1 top-1 h-5 w-5 text-indigo-600"
+                    className=" h-8 w-8 text-indigo-800"
                   />
                 </dt>
                 <dd>{feature.description}</dd>

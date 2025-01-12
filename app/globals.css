@@ -59,6 +59,46 @@
   }
 }
 
+.typewriter-container {
+  display: inline-block; /* Keeps text inline */
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Individual lines with typewriter animation */
+.typewriter-line {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid black;
+  animation: typing 4s steps(40, end), blink-caret 0.5s step-end infinite;
+}
+
+/* Add delay for subsequent lines */
+.typewriter-line:nth-child(2) {
+  animation-delay: 4s; /* Matches the duration of the first line's animation */
+}
+
+/* Typing effect */
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Blinking cursor */
+@keyframes blink-caret {
+  from,
+  to {
+    border-color: transparent;
+  }
+  50% {
+    border-color: black;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
